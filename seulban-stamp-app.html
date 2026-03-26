@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>슬반 스탬프 투어 — 춘천 호반 산책로</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green: #1d9e75;
+    --green-dark: #0f6e56;
+    --green-light: #e0f5ee;
+    --green-mid: #5dcaa5;
+    --gray: #888;
+    --bg: #f7fdf9;
+    --white: #ffffff;
+    --text: #111111;
+    --border: #d0ede3;
+  }
+
+  html, body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── 공통 레이아웃 ── */
+  .screen { display: none; min-height: 100vh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  .top-bar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .top-bar-back {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--green-light);
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: var(--green-dark);
+    flex-shrink: 0;
+  }
+  .top-bar-title { font-size: 15px; font-weight: 700; color: var(--text); flex: 1; }
+  .top-bar-logo { font-size: 13px; font-weight: 700; color: var(--green); }
+
+  .scroll-body { flex: 1; overflow-y: auto; padding-bottom: 40px; }
+
+  /* ── 버튼 공통 ── */
+  .btn-primary {
+    width: 100%; padding: 15px;
+    background: var(--green); color: white;
+    border: none; border-radius: 14px;
+    font-size: 15px; font-weight: 700;
+    font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer; transition: background 0.2s, transform 0.1s;
+  }
+  .btn-primary:hover { background: var(--green-dark); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled {
+    background: #ccc; cursor: not-allowed; transform: none;
+  }
+  .btn-outline {
+    width: 100%; padding: 14px;
+    background: transparent; color: var(--green);
+    border: 1.5px solid var(--green); border-radius: 14px;
+    font-size: 14px; font-weight: 700;
+    font-family: 'Noto Sans KR', sans-serif;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-outline:hover { background: var(--green-light); }
+
+  /* ════════════════════════
+     SCREEN 0 — 홈 (코스 소개)
+  ════════════════════════ */
+  .home-hero {
+    background: linear-gradient(160deg, var(--green-dark) 0%, var(--green) 70%, var(--green-mid) 100%);
+    padding: 40px 24px 32px;
+    color: white;
+  }
+  .home-hero-sub { font-size: 11px; font-weight: 700; letter-spacing: 0.15em; opacity: 0.75; margin-bottom: 10px; }
+  .home-hero-title { font-size: 22px; font-weight: 700; line-height: 1.4; margin-bottom: 10px; }
+  .home-hero-desc { font-size: 13px; opacity: 0.85; line-height: 1.7; margin-bottom: 24px; }
+  .home-hero-stats { display: flex; gap: 20px; }
+  .home-stat { text-align: center; }
+  .home-stat-num { font-size: 20px; font-weight: 700; }
+  .home-stat-label { font-size: 11px; opacity: 0.7; margin-top: 2px; }
+
+  .home-progress-wrap { padding: 20px 24px; background: white; border-bottom: 1px solid var(--border); }
+  .home-progress-label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .home-progress-text { font-size: 13px; font-weight: 700; color: var(--text); }
+  .home-progress-count { font-size: 13px; font-weight: 700; color: var(--green); }
+  .progress-bar-bg { height: 8px; background: var(--green-light); border-radius: 8px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--green); border-radius: 8px; transition: width 0.5s ease; }
+
+  .spot-list { padding: 20px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .spot-list-title { font-size: 13px; font-weight: 700; color: var(--gray); margin-bottom: 4px; letter-spacing: 0.05em; }
+
+  .spot-item {
+    background: white; border-radius: 16px;
+    border: 1px solid var(--border);
+    padding: 16px; display: flex; align-items: center; gap: 14px;
+    cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none; color: inherit;
+  }
+  .spot-item:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.07); }
+  .spot-item.done { border-color: var(--green); background: var(--green-light); }
+  .spot-item.locked { opacity: 0.5; cursor: default; pointer-events: none; }
+
+  .spot-num {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+    background: var(--green-light); color: var(--green-dark);
+  }
+  .spot-item.done .spot-num { background: var(--green); color: white; }
+  .spot-content { flex: 1; }
+  .spot-name { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+  .spot-desc-short { font-size: 12px; color: var(--gray); }
+  .spot-status { font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .spot-status.done { color: var(--green); }
+  .spot-status.todo { color: var(--gray); }
+
+  .home-bottom { padding: 0 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* ════════════════════════
+     SCREEN 1 — QR 스캔 (형식)
+  ════════════════════════ */
+  .qr-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 24px; gap: 24px; }
+  .qr-viewer {
+    width: 240px; height: 240px; border-radius: 24px;
+    background: #111; position: relative; overflow: hidden;
+    border: 3px solid var(--green);
+  }
+  .qr-corner {
+    position: absolute; width: 28px; height: 28px;
+    border-color: var(--green); border-style: solid;
+  }
+  .qr-corner.tl { top: 8px; left: 8px; border-width: 3px 0 0 3px; }
+  .qr-corner.tr { top: 8px; right: 8px; border-width: 3px 3px 0 0; }
+  .qr-corner.bl { bottom: 8px; left: 8px; border-width: 0 0 3px 3px; }
+  .qr-corner.br { bottom: 8px; right: 8px; border-width: 0 3px 3px 0; }
+  .qr-scan-line {
+    position: absolute; left: 12px; right: 12px; height: 2px;
+    background: var(--green); opacity: 0.8;
+    animation: scanline 2s ease-in-out infinite;
+  }
+  @keyframes scanline {
+    0% { top: 20px; }
+    50% { top: 210px; }
+    100% { top: 20px; }
+  }
+  .qr-icon { font-size: 48px; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); opacity: 0.3; }
+
+  .qr-info { text-align: center; }
+  .qr-info-title { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+  .qr-info-desc { font-size: 13px; color: var(--gray); line-height: 1.7; }
+
+  .qr-bottom { width: 100%; padding: 0 24px 32px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* ════════════════════════
+     SCREEN 2 — 사진 업로드
+  ════════════════════════ */
+  .photo-body { padding: 24px 20px; display: flex; flex-direction: column; gap: 20px; }
+
+  .spot-info-card {
+    background: var(--green-light); border-radius: 16px;
+    padding: 16px 18px; border: 1px solid var(--border);
+  }
+  .spot-info-region { font-size: 11px; font-weight: 700; color: var(--green); margin-bottom: 4px; }
+  .spot-info-name { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+  .spot-info-desc { font-size: 12px; color: #555; line-height: 1.7; }
+
+  .photo-upload-area {
+    border: 2px dashed var(--border); border-radius: 20px;
+    min-height: 220px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px;
+    background: white; cursor: pointer; transition: border-color 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .photo-upload-area:hover { border-color: var(--green); }
+  .photo-upload-area.has-photo { border-style: solid; border-color: var(--green); }
+  .photo-preview {
+    width: 100%; height: 100%; object-fit: cover;
+    position: absolute; top: 0; left: 0; border-radius: 18px;
+    display: none;
+  }
+  .photo-upload-area.has-photo .photo-preview { display: block; }
+  .photo-upload-area.has-photo .upload-placeholder { display: none; }
+  .upload-placeholder { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .upload-icon { font-size: 40px; }
+  .upload-text { font-size: 14px; font-weight: 700; color: var(--text); }
+  .upload-sub { font-size: 12px; color: var(--gray); }
+  #file-input { display: none; }
+
+  .photo-retake {
+    position: absolute; bottom: 12px; right: 12px; z-index: 2;
+    background: rgba(0,0,0,0.6); color: white;
+    border: none; border-radius: 20px; padding: 6px 14px;
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    display: none;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .photo-upload-area.has-photo .photo-retake { display: block; }
+
+  .photo-guide {
+    background: white; border-radius: 14px;
+    padding: 14px 16px; border: 1px solid var(--border);
+  }
+  .photo-guide-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .photo-guide-list { display: flex; flex-direction: column; gap: 5px; }
+  .photo-guide-item { font-size: 12px; color: var(--gray); display: flex; align-items: flex-start; gap: 6px; line-height: 1.5; }
+
+  /* ════════════════════════
+     SCREEN 3 — 스탬프 획득 완료
+  ════════════════════════ */
+  .complete-body {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 24px; text-align: center; gap: 20px;
+  }
+  .stamp-anim {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: var(--green); display: flex; align-items: center;
+    justify-content: center; font-size: 52px;
+    animation: stampPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    box-shadow: 0 0 0 0 rgba(29,158,117,0.4);
+    animation: stampPop 0.5s ease forwards, pulse 2s 0.5s ease-in-out infinite;
+  }
+  @keyframes stampPop {
+    0% { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(29,158,117,0.3); }
+    50% { box-shadow: 0 0 0 16px rgba(29,158,117,0); }
+  }
+  .complete-title { font-size: 22px; font-weight: 700; }
+  .complete-spot-name { font-size: 15px; color: var(--green); font-weight: 700; }
+  .complete-desc { font-size: 13px; color: var(--gray); line-height: 1.7; }
+  .complete-progress-wrap { width: 100%; background: white; border-radius: 16px; padding: 20px; border: 1px solid var(--border); }
+  .complete-progress-label { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px; font-weight: 700; }
+  .complete-dots { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
+  .complete-dot { width: 16px; height: 16px; border-radius: 50%; background: var(--green-light); border: 2px solid var(--border); transition: all 0.4s; }
+  .complete-dot.filled { background: var(--green); border-color: var(--green); }
+  .complete-dot.new { animation: dotBounce 0.5s 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; }
+  @keyframes dotBounce { 0% { transform: scale(0); } 70% { transform: scale(1.3); } 100% { transform: scale(1); } }
+
+  .complete-bottom { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+
+  /* ════════════════════════
+     SCREEN 4 — 완주! 리워드 신청
+  ════════════════════════ */
+  .reward-body { padding: 0; }
+  .reward-hero {
+    background: linear-gradient(160deg, var(--green-dark), var(--green));
+    padding: 48px 24px 40px; text-align: center; color: white;
+  }
+  .reward-badge-wrap {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: rgba(255,255,255,0.2); margin: 0 auto 20px;
+    display: flex; align-items: center; justify-content: center; font-size: 48px;
+    animation: stampPop 0.6s ease forwards;
+  }
+  .reward-hero-title { font-size: 24px; font-weight: 700; margin-bottom: 10px; }
+  .reward-hero-desc { font-size: 13px; opacity: 0.85; line-height: 1.7; }
+
+  .reward-stamps { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+  .reward-stamp-item { width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 20px; }
+
+  .reward-form { padding: 24px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .reward-form-title { font-size: 15px; font-weight: 700; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 12px; font-weight: 700; color: var(--gray); }
+  .form-input {
+    padding: 13px 14px; border: 1.5px solid var(--border);
+    border-radius: 12px; font-size: 14px; font-family: 'Noto Sans KR', sans-serif;
+    outline: none; transition: border-color 0.2s; background: white;
+  }
+  .form-input:focus { border-color: var(--green); }
+  .reward-notice {
+    background: var(--green-light); border-radius: 12px;
+    padding: 14px 16px; font-size: 12px; color: #555; line-height: 1.7;
+  }
+  .reward-submitted { text-align: center; padding: 40px 24px; display: none; flex-direction: column; align-items: center; gap: 16px; }
+  .reward-submitted.show { display: flex; }
+  .reward-submitted-icon { font-size: 56px; }
+  .reward-submitted-title { font-size: 20px; font-weight: 700; }
+  .reward-submitted-desc { font-size: 13px; color: var(--gray); line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════
+  SCREEN 0 — 홈
+════════════════════ -->
+<div class="screen active" id="screen-home">
+  <div class="top-bar">
+    <span class="top-bar-logo">🐾 Seulban.</span>
+    <span class="top-bar-title">춘천 호반 산책로 투어</span>
+  </div>
+  <div class="scroll-body">
+    <div class="home-hero">
+      <div class="home-hero-sub">PHOTO STAMP TOUR · 강원 춘천</div>
+      <div class="home-hero-title">춘천 호반 산책로<br>6개 스팟을 완주하세요</div>
+      <div class="home-hero-desc">반려동물과 함께 춘천의 아름다운 호반길을<br>걸으며 스탬프를 모아보세요</div>
+      <div class="home-hero-stats">
+        <div class="home-stat"><div class="home-stat-num">6</div><div class="home-stat-label">총 스팟</div></div>
+        <div class="home-stat"><div class="home-stat-num" id="home-done-count">0</div><div class="home-stat-label">완료</div></div>
+        <div class="home-stat"><div class="home-stat-num">핀뱃지</div><div class="home-stat-label">완주 리워드</div></div>
+      </div>
+    </div>
+
+    <div class="home-progress-wrap">
+      <div class="home-progress-label">
+        <span class="home-progress-text">진행 현황</span>
+        <span class="home-progress-count" id="home-progress-text">0 / 6 완료</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="home-progress-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="spot-list">
+      <div class="spot-list-title">COURSE SPOTS</div>
+      <div class="spot-item" onclick="goQR(0)" id="spot-item-0">
+        <div class="spot-num" id="spot-num-0">1</div>
+        <div class="spot-content">
+          <div class="spot-name">의암호 전망대</div>
+          <div class="spot-desc-short">호수 전경이 한눈에 내려다보이는 뷰포인트</div>
+        </div>
+        <div class="spot-status todo" id="spot-status-0">미완료</div>
+      </div>
+      <div class="spot-item" onclick="goQR(1)" id="spot-item-1">
+        <div class="spot-num" id="spot-num-1">2</div>
+        <div class="spot-content">
+          <div class="spot-name">중도 선착장</div>
+          <div class="spot-desc-short">강아지와 걷기 좋은 수변 산책로</div>
+        </div>
+        <div class="spot-status todo" id="spot-status-1">미완료</div>
+      </div>
+      <div class="spot-item" onclick="goQR(2)" id="spot-item-2">
+        <div class="spot-num" id="spot-num-2">3</div>
+        <div class="spot-content">
+          <div class="spot-name">소양강 스카이워크</div>
+          <div class="spot-desc-short">투명 바닥 위 반려동물 인증샷 명소</div>
+        </div>
+        <div class="spot-status todo" id="spot-status-2">미완료</div>
+      </div>
+      <div class="spot-item" onclick="goQR(3)" id="spot-item-3">
+        <div class="spot-num" id="spot-num-3">4</div>
+        <div class="spot-content">
+          <div class="spot-name">춘천 닭갈비 골목</div>
+          <div class="spot-desc-short">반려동물 동반 가능 야외 식당 구역</div>
+        </div>
+        <div class="spot-status todo" id="spot-status-3">미완료</div>
+      </div>
+      <div class="spot-item" onclick="goQR(4)" id="spot-item-4">
+        <div class="spot-num" id="spot-num-4">5</div>
+        <div class="spot-content">
+          <div class="spot-name">삼악산 케이블카 승강장</div>
+          <div class="spot-desc-short">산 아래 산책로에서 스탬프 획득</div>
+        </div>
+        <div class="spot-status todo" id="spot-status-4">미완료</div>
+      </div>
+      <div class="spot-item" onclick="goQR(5)" id="spot-item-5">
+        <div class="spot-num" id="spot-num-5">6</div>
+        <div class="spot-content">
+          <div class="spot-name">강촌 레일바이크 출발점</div>
+          <div class="spot-desc-short">북한강변 따라 달리는 레일바이크 시작점</div>
+        </div>
+        <div class="spot-status todo" id="spot-status-5">미완료</div>
+      </div>
+    </div>
+
+    <div class="home-bottom">
+      <button class="btn-primary" id="home-reward-btn" onclick="goReward()" disabled>
+        🏅 완주 리워드 신청하기
+      </button>
+      <button class="btn-outline" onclick="resetAll()">처음부터 다시 시작</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════
+  SCREEN 1 — QR 스캔
+════════════════════ -->
+<div class="screen" id="screen-qr">
+  <div class="top-bar">
+    <button class="top-bar-back" onclick="goHome()">←</button>
+    <span class="top-bar-title" id="qr-top-title">QR 코드 스캔</span>
+  </div>
+  <div class="qr-body">
+    <div class="qr-viewer">
+      <div class="qr-corner tl"></div>
+      <div class="qr-corner tr"></div>
+      <div class="qr-corner bl"></div>
+      <div class="qr-corner br"></div>
+      <div class="qr-scan-line"></div>
+      <div class="qr-icon">📷</div>
+    </div>
+    <div class="qr-info">
+      <div class="qr-info-title" id="qr-spot-name">스팟 QR을 스캔하세요</div>
+      <div class="qr-info-desc">현장에 부착된 슬반 QR코드에<br>카메라를 가져다 대주세요</div>
+    </div>
+  </div>
+  <div class="qr-bottom">
+    <button class="btn-primary" onclick="goPhoto()">✓ QR 인식 완료 — 사진 촬영으로</button>
+    <button class="btn-outline" onclick="goHome()">취소</button>
+  </div>
+</div>
+
+<!-- ════════════════════
+  SCREEN 2 — 사진 업로드
+════════════════════ -->
+<div class="screen" id="screen-photo">
+  <div class="top-bar">
+    <button class="top-bar-back" onclick="goQR(currentSpot)">←</button>
+    <span class="top-bar-title">포토 인증</span>
+  </div>
+  <div class="scroll-body">
+    <div class="photo-body">
+      <div class="spot-info-card">
+        <div class="spot-info-region" id="photo-region">📍 강원 · 춘천</div>
+        <div class="spot-info-name" id="photo-spot-name">스팟 이름</div>
+        <div class="spot-info-desc" id="photo-spot-desc">스팟 설명</div>
+      </div>
+
+      <div class="photo-upload-area" id="upload-area" onclick="triggerUpload()">
+        <div class="upload-placeholder">
+          <div class="upload-icon">📸</div>
+          <div class="upload-text">반려동물과 함께 사진 찍기</div>
+          <div class="upload-sub">탭해서 카메라 열기</div>
+        </div>
+        <img class="photo-preview" id="photo-preview" src="" alt="업로드 사진">
+        <button class="photo-retake" onclick="event.stopPropagation(); triggerUpload()">다시 찍기</button>
+      </div>
+      <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handlePhoto(event)">
+
+      <div class="photo-guide">
+        <div class="photo-guide-title">📋 인증 가이드</div>
+        <div class="photo-guide-list">
+          <div class="photo-guide-item"><span>🐾</span><span>반려동물이 사진에 함께 나와야 해요</span></div>
+          <div class="photo-guide-item"><span>📍</span><span>스팟의 특징적인 배경이 보이면 좋아요</span></div>
+          <div class="photo-guide-item"><span>☀️</span><span>밝은 환경에서 촬영해주세요</span></div>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="submit-btn" onclick="submitStamp()" disabled>
+        스탬프 획득하기
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════
+  SCREEN 3 — 완료
+════════════════════ -->
+<div class="screen" id="screen-complete">
+  <div class="top-bar">
+    <span class="top-bar-logo">🐾 Seulban.</span>
+    <span class="top-bar-title">스탬프 획득!</span>
+  </div>
+  <div class="scroll-body">
+    <div class="complete-body">
+      <div class="stamp-anim">🏅</div>
+      <div>
+        <div class="complete-spot-name" id="complete-spot-name">의암호 전망대</div>
+        <div class="complete-title">스탬프 획득!</div>
+      </div>
+      <div class="complete-desc">반려동물과 함께한 소중한 순간이<br>기록되었어요 🐾</div>
+
+      <div class="complete-progress-wrap">
+        <div class="complete-progress-label">
+          <span>진행 현황</span>
+          <span id="complete-count-text" style="color:var(--green);">1 / 6</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="complete-progress-bar"></div>
+        </div>
+        <div class="complete-dots" id="complete-dots"></div>
+      </div>
+
+      <div class="complete-bottom">
+        <button class="btn-primary" id="complete-next-btn" onclick="goHome()">다음 스팟 도전하기</button>
+        <button class="btn-outline" id="complete-reward-btn" onclick="goReward()" style="display:none">
+          🏅 완주! 리워드 신청하기
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════
+  SCREEN 4 — 리워드 신청
+════════════════════ -->
+<div class="screen" id="screen-reward">
+  <div class="top-bar">
+    <button class="top-bar-back" onclick="goHome()">←</button>
+    <span class="top-bar-title">완주 리워드 신청</span>
+  </div>
+  <div class="scroll-body reward-body">
+    <div class="reward-hero">
+      <div class="reward-badge-wrap">📌</div>
+      <div class="reward-hero-title">코스 완주를 축하해요! 🎉</div>
+      <div class="reward-hero-desc">춘천 호반 산책로 6개 스팟을 모두 완주했어요<br>슬반 한정판 핀 뱃지를 보내드릴게요</div>
+      <div class="reward-stamps" id="reward-stamps"></div>
+    </div>
+
+    <div class="reward-form" id="reward-form-wrap">
+      <div class="reward-form-title">배송지 정보 입력</div>
+      <div class="form-group">
+        <div class="form-label">이름</div>
+        <input class="form-input" type="text" id="reward-name" placeholder="받으실 분 이름">
+      </div>
+      <div class="form-group">
+        <div class="form-label">연락처</div>
+        <input class="form-input" type="tel" id="reward-phone" placeholder="010-0000-0000">
+      </div>
+      <div class="form-group">
+        <div class="form-label">주소</div>
+        <input class="form-input" type="text" id="reward-addr" placeholder="배송받으실 주소">
+      </div>
+      <div class="form-group">
+        <div class="form-label">반려동물 이름 (선택)</div>
+        <input class="form-input" type="text" id="reward-pet" placeholder="우리 아이 이름">
+      </div>
+      <div class="reward-notice">
+        📦 신청 후 영업일 기준 5~7일 이내 배송됩니다.<br>
+        핀 뱃지는 춘천 호반 코스 한정 디자인으로 제작돼요.
+      </div>
+      <button class="btn-primary" onclick="submitReward()">리워드 신청 완료</button>
+    </div>
+
+    <div class="reward-submitted" id="reward-submitted">
+      <div class="reward-submitted-icon">🎊</div>
+      <div class="reward-submitted-title">신청 완료!</div>
+      <div class="reward-submitted-desc">슬반 한정판 핀 뱃지 신청이 완료되었어요<br>곧 소중한 추억과 함께 배송될 거예요 🐾</div>
+      <button class="btn-primary" onclick="goHome()" style="margin-top:8px;">홈으로 돌아가기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SPOTS = [
+  { name: '의암호 전망대', desc: '춘천의 아름다운 의암호가 한눈에 내려다보이는 전망 포인트예요. 맑은 날엔 멀리 산까지 보여요.' },
+  { name: '중도 선착장', desc: '강아지와 함께 걷기 좋은 수변 산책로가 펼쳐져 있어요. 잔잔한 호수 소리가 함께해요.' },
+  { name: '소양강 스카이워크', desc: '투명 유리 바닥 위에서 반려동물과 함께 인증샷을 찍을 수 있는 인기 명소예요.' },
+  { name: '춘천 닭갈비 골목', desc: '반려동물 동반 가능한 야외 테라스 식당들이 모여 있는 골목이에요. 쉬어가기 좋아요.' },
+  { name: '삼악산 케이블카 승강장', desc: '케이블카 탑승장 아래 산책로에서 스탬프를 획득할 수 있어요. 울창한 숲길이 시원해요.' },
+  { name: '강촌 레일바이크 출발점', desc: '북한강변을 따라 달리는 레일바이크의 출발점이에요. 멋진 강변 풍경이 펼쳐져요.' }
+];
+
+let stamps = JSON.parse(localStorage.getItem('sb_stamps') || '[]');
+let currentSpot = 0;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function goHome() {
+  updateHomeUI();
+  showScreen('screen-home');
+}
+
+function goQR(spotIdx) {
+  currentSpot = spotIdx;
+  document.getElementById('qr-top-title').textContent = `SPOT ${spotIdx + 1} — QR 스캔`;
+  document.getElementById('qr-spot-name').textContent = SPOTS[spotIdx].name;
+  showScreen('screen-qr');
+}
+
+function goPhoto() {
+  const s = SPOTS[currentSpot];
+  document.getElementById('photo-spot-name').textContent = s.name;
+  document.getElementById('photo-spot-desc').textContent = s.desc;
+  document.getElementById('photo-region').textContent = `📍 강원 · 춘천  ·  SPOT ${currentSpot + 1}`;
+  document.getElementById('upload-area').classList.remove('has-photo');
+  document.getElementById('photo-preview').src = '';
+  document.getElementById('submit-btn').disabled = true;
+  document.getElementById('file-input').value = '';
+  showScreen('screen-photo');
+}
+
+function triggerUpload() {
+  document.getElementById('file-input').click();
+}
+
+function handlePhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    document.getElementById('photo-preview').src = ev.target.result;
+    document.getElementById('upload-area').classList.add('has-photo');
+    document.getElementById('submit-btn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+function submitStamp() {
+  if (!stamps.includes(currentSpot)) {
+    stamps.push(currentSpot);
+    localStorage.setItem('sb_stamps', JSON.stringify(stamps));
+  }
+  showComplete();
+}
+
+function showComplete() {
+  const s = SPOTS[currentSpot];
+  document.getElementById('complete-spot-name').textContent = s.name;
+  const count = stamps.length;
+  document.getElementById('complete-count-text').textContent = `${count} / 6`;
+  document.getElementById('complete-progress-bar').style.width = `${(count / 6) * 100}%`;
+
+  const dotsWrap = document.getElementById('complete-dots');
+  dotsWrap.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const d = document.createElement('div');
+    d.className = 'complete-dot' + (stamps.includes(i) ? ' filled' : '') + (i === currentSpot ? ' new' : '');
+    dotsWrap.appendChild(d);
+  }
+
+  const isComplete = count >= 6;
+  document.getElementById('complete-next-btn').style.display = isComplete ? 'none' : 'block';
+  document.getElementById('complete-reward-btn').style.display = isComplete ? 'block' : 'none';
+
+  showScreen('screen-complete');
+}
+
+function goReward() {
+  const dotsWrap = document.getElementById('reward-stamps');
+  dotsWrap.innerHTML = '';
+  const icons = ['🏞️','🚤','🌉','🍗','🚡','🚃'];
+  stamps.forEach(i => {
+    const d = document.createElement('div');
+    d.className = 'reward-stamp-item';
+    d.textContent = icons[i];
+    dotsWrap.appendChild(d);
+  });
+  document.getElementById('reward-form-wrap').style.display = 'flex';
+  document.getElementById('reward-submitted').classList.remove('show');
+  showScreen('screen-reward');
+}
+
+function submitReward() {
+  const name = document.getElementById('reward-name').value.trim();
+  const phone = document.getElementById('reward-phone').value.trim();
+  const addr = document.getElementById('reward-addr').value.trim();
+  if (!name || !phone || !addr) {
+    alert('이름, 연락처, 주소를 입력해주세요.');
+    return;
+  }
+  document.getElementById('reward-form-wrap').style.display = 'none';
+  document.getElementById('reward-submitted').classList.add('show');
+}
+
+function updateHomeUI() {
+  const count = stamps.length;
+  document.getElementById('home-done-count').textContent = count;
+  document.getElementById('home-progress-text').textContent = `${count} / 6 완료`;
+  document.getElementById('home-progress-bar').style.width = `${(count / 6) * 100}%`;
+  document.getElementById('home-reward-btn').disabled = count < 6;
+
+  for (let i = 0; i < 6; i++) {
+    const done = stamps.includes(i);
+    const item = document.getElementById(`spot-item-${i}`);
+    const num = document.getElementById(`spot-num-${i}`);
+    const status = document.getElementById(`spot-status-${i}`);
+    if (done) {
+      item.classList.add('done');
+      num.textContent = '✓';
+      status.textContent = '완료';
+      status.className = 'spot-status done';
+    } else {
+      item.classList.remove('done');
+      num.textContent = i + 1;
+      status.textContent = '미완료';
+      status.className = 'spot-status todo';
+    }
+  }
+}
+
+function resetAll() {
+  if (confirm('모든 스탬프 기록을 초기화할까요?')) {
+    stamps = [];
+    localStorage.removeItem('sb_stamps');
+    updateHomeUI();
+  }
+}
+
+// URL 파라미터로 스팟 자동 진입 (QR 연동용)
+const urlParams = new URLSearchParams(window.location.search);
+const spotParam = urlParams.get('spot');
+if (spotParam !== null) {
+  const idx = parseInt(spotParam);
+  if (idx >= 0 && idx < 6) {
+    currentSpot = idx;
+    updateHomeUI();
+    goQR(idx);
+  } else {
+    updateHomeUI();
+  }
+} else {
+  updateHomeUI();
+}
+</script>
+</body>
+</html>
